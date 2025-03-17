@@ -11,7 +11,7 @@ export const SP500_DB_ROUTE = './sp500_data.db';
 export enum SP500_DB_SCHEMA {
   CREATE_TABLE_SCHEMA = `
     CREATE TABLE IF NOT EXISTS sp500 (
-        timestamp TEXT PRIMARY KEY,
+        date TEXT PRIMARY KEY,
         open REAL,
         high REAL,
         low REAL,
@@ -19,7 +19,7 @@ export enum SP500_DB_SCHEMA {
         volume INTEGER
     )
 `,
-  INSERT_DATA = `INSERT OR IGNORE INTO sp500 (timestamp, open, high, low, close, volume) 
+  INSERT_DATA = `INSERT OR IGNORE INTO sp500 (date, open, high, low, close, volume) 
              VALUES (?, ?, ?, ?, ?, ?)`,
 }
 
