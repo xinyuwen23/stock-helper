@@ -1,3 +1,3 @@
-import { fetchSp500Data$ } from './api/sp500/sp500';
+import { fetchSP500Data } from './api/sp500/sp500';
 
-fetchSp500Data$.subscribe();
+fetchSP500Data().subscribe();
