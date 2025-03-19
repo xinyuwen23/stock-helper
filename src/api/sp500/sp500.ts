@@ -94,7 +94,7 @@ function fetchAndStoreVIXData() {
             if (err) {
               reject(err);
             } else {
-              console.log(`Storing ${(entry.date, entry.vix)} to DB`);
+              console.log(`Storing ${entry.date}, ${entry.vix} to DB`);
               resolve();
             }
           });
