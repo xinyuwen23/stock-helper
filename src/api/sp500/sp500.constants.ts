@@ -1,7 +1,7 @@
 enum yahoo_finance {
   symbol = '^GSPC',
   interval = '1d',
-  range = '15d',
+  range = '16y',
 }
 
 export enum YAHOO_FINANCE_API_URL {

@@ -16,6 +16,7 @@ function initializeDatabase() {
 
 function fetchAndStoreSP500Data() {
   const db = new sqlite3.Database(SP500_DB_ROUTE);
+  const cutoffDate = new Date(2010, 0, 1); // 2010-01-01
 
   return from(axios.get<SP500Data>(YAHOO_FINANCE_API_URL.SP500)).pipe(
     map(response => {
@@ -28,21 +29,27 @@ function fetchAndStoreSP500Data() {
       const { timestamp } = result;
       const { open, high, low, close, volume } = result.indicators.quote[0];
 
-      return timestamp.map((ts, i) => ({
-        date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
-        open: open[i] !== null ? open[i] : null,
-        high: high[i] !== null ? high[i] : null,
-        low: low[i] !== null ? low[i] : null,
-        close: close[i] !== null ? close[i] : null,
-        volume: volume[i] !== null ? volume[i] : null,
-      }));
+      return timestamp
+        .map((ts, i) => {
+          const estDate = toZonedTime(fromUnixTime(ts), TIME_ZONE);
+          return {
+            date: format(estDate, 'MM-dd-yyyy'),
+            timestamp: estDate.getTime(), // 用于过滤
+            open: open[i] !== null ? open[i] : null,
+            high: high[i] !== null ? high[i] : null,
+            low: low[i] !== null ? low[i] : null,
+            close: close[i] !== null ? close[i] : null,
+            volume: volume[i] !== null ? volume[i] : null,
+          };
+        })
+        .filter(entry => entry.timestamp >= cutoffDate.getTime()); // 只保留 2010-01-01 之后的数据
     }),
     tap(data => {
       const stmt = db.prepare(SP500_DB_SCHEMA.INSERT_SP500_DATA);
 
       data.forEach(entry => {
         stmt.run(entry.date, entry.open, entry.high, entry.low, entry.close, entry.volume);
-        console.log(`Storing ${(entry.date, entry.open, entry.high, entry.low, entry.close, entry.volume)} to DB`);
+        console.log(`Storing ${entry.date}, ${entry.open}, ${entry.high}, ${entry.low}, ${entry.close}, ${entry.volume} to DB`);
       });
 
       stmt.finalize();
