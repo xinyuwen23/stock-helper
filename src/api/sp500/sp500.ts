@@ -2,11 +2,12 @@ import axios from 'axios';
 import { from, EMPTY } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import sqlite3 from 'sqlite3';
-import { SP500Data } from './sp500.model';
-import { SP500_DB_ROUTE, SP500_DB_SCHEMA, TIME_ZONE, YAHOO_FINANCE_API_URL } from './sp500.constants';
+import { SP500Data } from '../../shared/models/sp500.model';
+import { SP500_DB_ROUTE, SP500_DB_SCHEMA, TIME_ZONE, YAHOO_FINANCE_API_URL } from '../../shared/constants/sp500.constants';
 import { format, fromUnixTime } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { VIXData } from './vix.model';
+import { VIXData } from '../../shared/models/vix.model';
+import { UST10YData } from '../../shared/models/ust10y.model';
 
 function initializeDatabase() {
   const db = new sqlite3.Database(SP500_DB_ROUTE);
@@ -16,7 +17,7 @@ function initializeDatabase() {
 
 function fetchAndStoreSP500Data() {
   const db = new sqlite3.Database(SP500_DB_ROUTE);
-  const cutoffDate = new Date(2010, 0, 1); // 2010-01-01
+  const cutoffDate = new Date(2010, 0, 1);
 
   return from(axios.get<SP500Data>(YAHOO_FINANCE_API_URL.SP500)).pipe(
     map(response => {
@@ -34,7 +35,7 @@ function fetchAndStoreSP500Data() {
           const estDate = toZonedTime(fromUnixTime(ts), TIME_ZONE);
           return {
             date: format(estDate, 'MM-dd-yyyy'),
-            timestamp: estDate.getTime(), // 用于过滤
+            timestamp: estDate.getTime(),
             open: open[i] !== null ? open[i] : null,
             high: high[i] !== null ? high[i] : null,
             low: low[i] !== null ? low[i] : null,
@@ -42,7 +43,7 @@ function fetchAndStoreSP500Data() {
             volume: volume[i] !== null ? volume[i] : null,
           };
         })
-        .filter(entry => entry.timestamp >= cutoffDate.getTime()); // 只保留 2010-01-01 之后的数据
+        .filter(entry => entry.timestamp >= cutoffDate.getTime());
     }),
     tap(data => {
       const stmt = db.prepare(SP500_DB_SCHEMA.INSERT_SP500_DATA);
@@ -113,9 +114,58 @@ function fetchAndStoreVIXData() {
   );
 }
 
+function fetchAndStoreUST10YData() {
+  const db = new sqlite3.Database(SP500_DB_ROUTE);
+
+  return from(axios.get<UST10YData>(YAHOO_FINANCE_API_URL.UST10Y)).pipe(
+    map(response => {
+      const result = response.data.chart.result[0];
+
+      if (!result || !result.timestamp || !result.indicators) {
+        throw new Error('Invalid UST10Y API response');
+      }
+
+      const timestamps = result.timestamp;
+      const yields = result.indicators.quote[0].close;
+
+      return timestamps.map((ts: number, i: number) => ({
+        date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
+        ust10y: yields[i] !== null ? yields[i] : null,
+      }));
+    }),
+    tap(async data => {
+      const stmt = db.prepare(SP500_DB_SCHEMA.INSERT_UST10Y_DATA);
+      let updatedCount = 0;
+
+      for (const entry of data) {
+        await new Promise<void>((resolve, reject) => {
+          stmt.run(entry.ust10y, entry.date, (err: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log(`Updating ${entry.date} with UST10Y: ${entry.ust10y}`);
+              updatedCount++;
+              resolve();
+            }
+          });
+        });
+      }
+
+      stmt.finalize();
+      db.close();
+      console.log(`Updated ${updatedCount} records with UST10Y data in SP500 table.`);
+    }),
+    catchError(error => {
+      console.error('Failed to fetch UST10Y data:', error);
+      db.close();
+      return EMPTY;
+    })
+  );
+}
+
 export function getStockData() {
-  initializeDatabase();
-  fetchAndStoreSP500Data().subscribe(() => {
-    fetchAndStoreVIXData().subscribe();
-  });
+  // initializeDatabase();
+  // fetchAndStoreSP500Data().subscribe();
+  // fetchAndStoreVIXData().subscribe();
+  // fetchAndStoreUST10YData().subscribe();
 }

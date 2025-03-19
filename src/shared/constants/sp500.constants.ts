@@ -7,6 +7,7 @@ enum yahoo_finance {
 export enum YAHOO_FINANCE_API_URL {
   SP500 = `https://query1.finance.yahoo.com/v8/finance/chart/${yahoo_finance.symbol}?interval=${yahoo_finance.interval}&range=${yahoo_finance.range}`,
   VIX = `https://query1.finance.yahoo.com/v8/finance/chart/^VIX?interval=${yahoo_finance.interval}&range=${yahoo_finance.range}`,
+  UST10Y = `https://query1.finance.yahoo.com/v8/finance/chart/^TNX?interval=${yahoo_finance.interval}&range=${yahoo_finance.range}`,
 }
 
 export const SP500_DB_ROUTE = './sp500_data.db';
@@ -20,7 +21,8 @@ export enum SP500_DB_SCHEMA {
       low REAL,
       close REAL,
       volume INTEGER,
-      vix REAL
+      vix REAL,
+      ust10y REAL
     )
   `,
   INSERT_SP500_DATA = `
@@ -37,6 +39,11 @@ export enum SP500_DB_SCHEMA {
     UPDATE sp500_data
     SET vix = ?
     WHERE date = ?
+  `,
+  INSERT_UST10Y_DATA = `
+    UPDATE sp500_data 
+    SET ust10y = ? 
+    WHERE date = ?;
   `,
 }
 

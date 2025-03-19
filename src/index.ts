@@ -1,3 +1,10 @@
 import { getStockData } from './api/sp500/sp500';
+import { calculateRsiValues, testDB, testJSON } from './shared/util';
 
-getStockData();
+// getStockData();
+
+// calculateRsiValues();
+
+// testDB();
+
+testJSON();
