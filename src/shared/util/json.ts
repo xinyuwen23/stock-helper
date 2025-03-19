@@ -1,17 +1,13 @@
 import * as fs from 'fs';
 
 // 定义数据项的接口
-interface DataItem {
-  id: number;
-  name: string;
-}
 
-enum FilePath {
-  Data = 'data.json',
+export enum FilePath {
+  SP500 = 'sp500.json',
 }
 
 // 创建或读取 JSON 文件
-export const createOrReadJSON = (filePath: FilePath): DataItem[] => {
+export const createOrReadJSON = (filePath: FilePath): unknown[] => {
   try {
     if (!fs.existsSync(filePath)) {
       fs.writeFileSync(filePath, JSON.stringify([])); // 如果文件不存在，则创建一个空数组
@@ -28,7 +24,7 @@ export const createOrReadJSON = (filePath: FilePath): DataItem[] => {
 };
 
 // 存入数据
-export const saveDataToJSON = (filePath: FilePath, data: DataItem[]): void => {
+export const saveDataToJSON = (filePath: FilePath, data: unknown[]): void => {
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2)); // 格式化输出
     console.log('Data saved successfully');
@@ -38,7 +34,7 @@ export const saveDataToJSON = (filePath: FilePath, data: DataItem[]): void => {
 };
 
 // 更新数据
-export const updateDataInJSON = (filePath: FilePath, conditionFn: (item: DataItem) => boolean, updateFn: (item: DataItem) => DataItem): void => {
+export const updateDataInJSON = (filePath: FilePath, conditionFn: (item: unknown) => boolean, updateFn: (item: unknown) => unknown): void => {
   try {
     const data = createOrReadJSON(filePath);
     const updatedData = data.map(item => (conditionFn(item) ? updateFn(item) : item)); // 更新符合条件的数据
@@ -50,7 +46,7 @@ export const updateDataInJSON = (filePath: FilePath, conditionFn: (item: DataIte
 };
 
 // 删除数据
-export const deleteDataInJSON = (filePath: FilePath, conditionFn: (item: DataItem) => boolean): void => {
+export const deleteDataInJSON = (filePath: FilePath, conditionFn: (item: unknown) => boolean): void => {
   try {
     const data = createOrReadJSON(filePath);
     const filteredData = data.filter(item => !conditionFn(item)); // 删除符合条件的数据
@@ -62,7 +58,7 @@ export const deleteDataInJSON = (filePath: FilePath, conditionFn: (item: DataIte
 };
 
 // 读取数据
-export const readDataFromJSON = (filePath: FilePath): DataItem[] => {
+export const readDataFromJSON = (filePath: FilePath): unknown[] => {
   try {
     const data = createOrReadJSON(filePath);
     return data; // 返回整个数据
@@ -74,10 +70,10 @@ export const readDataFromJSON = (filePath: FilePath): DataItem[] => {
 
 export function testJSON() {
   // 示例用法
-  const filePath = FilePath.Data;
+  const filePath = FilePath.SP500;
 
   // 添加数据
-  const dataToAdd: DataItem = { id: 1, name: 'Item 1' };
+  const dataToAdd: unknown = { id: 1, name: 'Item 1' };
   const data = createOrReadJSON(filePath);
 
   console.log(data);

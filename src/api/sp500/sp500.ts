@@ -1,24 +1,16 @@
 import axios from 'axios';
-import { from, EMPTY } from 'rxjs';
+import { from, EMPTY, forkJoin } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
-import sqlite3 from 'sqlite3';
-import { SP500Data } from '../../shared/models/sp500.model';
-import { SP500_DB_ROUTE, SP500_DB_SCHEMA, TIME_ZONE, YAHOO_FINANCE_API_URL } from '../../shared/constants/sp500.constants';
 import { format, fromUnixTime } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { SP500Data } from '../../shared/models/sp500.model';
 import { VIXData } from '../../shared/models/vix.model';
 import { UST10YData } from '../../shared/models/ust10y.model';
+import { YAHOO_FINANCE_API_URL, TIME_ZONE } from '../../shared/constants/sp500.constants';
+import { FilePath, saveDataToJSON } from '../../shared/util';
 
-function initializeDatabase() {
-  const db = new sqlite3.Database(SP500_DB_ROUTE);
-  db.run(SP500_DB_SCHEMA.CREATE_TABLE);
-  db.close();
-}
-
-function fetchAndStoreSP500Data() {
-  const db = new sqlite3.Database(SP500_DB_ROUTE);
-  const cutoffDate = new Date(2010, 0, 1);
-
+// 获取并处理 S&P 500 数据
+function fetchSP500Data() {
   return from(axios.get<SP500Data>(YAHOO_FINANCE_API_URL.SP500)).pipe(
     map(response => {
       const result = response.data.chart.result[0];
@@ -31,43 +23,27 @@ function fetchAndStoreSP500Data() {
       const { open, high, low, close, volume } = result.indicators.quote[0];
 
       return timestamp
-        .map((ts, i) => {
-          const estDate = toZonedTime(fromUnixTime(ts), TIME_ZONE);
-          return {
-            date: format(estDate, 'MM-dd-yyyy'),
-            timestamp: estDate.getTime(),
+        .map((ts, i) => ({
+          date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
+          sp500: {
             open: open[i] !== null ? open[i] : null,
             high: high[i] !== null ? high[i] : null,
             low: low[i] !== null ? low[i] : null,
             close: close[i] !== null ? close[i] : null,
             volume: volume[i] !== null ? volume[i] : null,
-          };
-        })
-        .filter(entry => entry.timestamp >= cutoffDate.getTime());
-    }),
-    tap(data => {
-      const stmt = db.prepare(SP500_DB_SCHEMA.INSERT_SP500_DATA);
-
-      data.forEach(entry => {
-        stmt.run(entry.date, entry.open, entry.high, entry.low, entry.close, entry.volume);
-        console.log(`Storing ${entry.date}, ${entry.open}, ${entry.high}, ${entry.low}, ${entry.close}, ${entry.volume} to DB`);
-      });
-
-      stmt.finalize();
-      db.close();
-      console.log(`Stored ${data.length} S&P 500 records.`);
+          },
+        }))
+        .filter(entry => entry.sp500.open !== null);
     }),
     catchError(error => {
       console.error('Failed to fetch S&P 500 data:', error);
-      db.close();
       return EMPTY;
     })
   );
 }
 
-function fetchAndStoreVIXData() {
-  const db = new sqlite3.Database(SP500_DB_ROUTE);
-
+// 获取并处理 VIX 数据
+function fetchVIXData() {
   return from(axios.get<VIXData>(YAHOO_FINANCE_API_URL.VIX)).pipe(
     map(response => {
       const result = response.data.chart.result[0];
@@ -79,44 +55,20 @@ function fetchAndStoreVIXData() {
       const timestamps = result.timestamp;
       const vixValues = result.indicators.quote[0].close;
 
-      return timestamps.map((ts: number, i: number) => ({
+      return timestamps.map((ts, i) => ({
         date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
         vix: vixValues[i] !== null ? vixValues[i] : null,
       }));
     }),
-    tap(async data => {
-      const stmt = db.prepare(SP500_DB_SCHEMA.INSERT_VIX_DATA);
-
-      let updatedCount = 0;
-
-      for (const entry of data) {
-        await new Promise<void>((resolve, reject) => {
-          stmt.run(entry.vix, entry.date, (err: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              console.log(`Storing ${entry.date}, ${entry.vix} to DB`);
-              resolve();
-            }
-          });
-        });
-      }
-
-      stmt.finalize();
-      db.close();
-      console.log(`Updated ${updatedCount} records with VIX data.`);
-    }),
     catchError(error => {
       console.error('Failed to fetch VIX data:', error);
-      db.close();
       return EMPTY;
     })
   );
 }
 
-function fetchAndStoreUST10YData() {
-  const db = new sqlite3.Database(SP500_DB_ROUTE);
-
+// 获取并处理 UST10Y 数据
+function fetchUST10YData() {
   return from(axios.get<UST10YData>(YAHOO_FINANCE_API_URL.UST10Y)).pipe(
     map(response => {
       const result = response.data.chart.result[0];
@@ -128,44 +80,46 @@ function fetchAndStoreUST10YData() {
       const timestamps = result.timestamp;
       const yields = result.indicators.quote[0].close;
 
-      return timestamps.map((ts: number, i: number) => ({
+      return timestamps.map((ts, i) => ({
         date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
         ust10y: yields[i] !== null ? yields[i] : null,
       }));
     }),
-    tap(async data => {
-      const stmt = db.prepare(SP500_DB_SCHEMA.INSERT_UST10Y_DATA);
-      let updatedCount = 0;
-
-      for (const entry of data) {
-        await new Promise<void>((resolve, reject) => {
-          stmt.run(entry.ust10y, entry.date, (err: any) => {
-            if (err) {
-              reject(err);
-            } else {
-              console.log(`Updating ${entry.date} with UST10Y: ${entry.ust10y}`);
-              updatedCount++;
-              resolve();
-            }
-          });
-        });
-      }
-
-      stmt.finalize();
-      db.close();
-      console.log(`Updated ${updatedCount} records with UST10Y data in SP500 table.`);
-    }),
     catchError(error => {
       console.error('Failed to fetch UST10Y data:', error);
-      db.close();
       return EMPTY;
     })
   );
 }
 
+// 获取并存储所有数据
+function fetchAndStoreAllData() {
+  return forkJoin([fetchSP500Data(), fetchVIXData(), fetchUST10YData()]).pipe(
+    map(([sp500Data, vixData, ust10yData]) => {
+      return sp500Data.map(sp500Entry => {
+        const vixEntry = vixData.find(vix => vix.date === sp500Entry.date);
+        const ust10yEntry = ust10yData.find(ust10y => ust10y.date === sp500Entry.date);
+
+        return {
+          date: sp500Entry.date,
+          sp500: sp500Entry.sp500,
+          vix: vixEntry ? vixEntry.vix : null,
+          ust10y: ust10yEntry ? ust10yEntry.ust10y : null,
+        };
+      });
+    }),
+    tap(allData => {
+      saveDataToJSON(FilePath.SP500, allData);
+      console.log('All data has been saved to data.json');
+    }),
+    catchError(error => {
+      console.error('Error while fetching and storing all data:', error);
+      return EMPTY;
+    })
+  );
+}
+
+// 执行数据获取和存储
 export function getStockData() {
-  // initializeDatabase();
-  // fetchAndStoreSP500Data().subscribe();
-  // fetchAndStoreVIXData().subscribe();
-  // fetchAndStoreUST10YData().subscribe();
+  fetchAndStoreAllData().subscribe();
 }
