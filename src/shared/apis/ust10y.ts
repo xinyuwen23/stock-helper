@@ -22,7 +22,7 @@ export function fetchUST10YData() {
         ust10y: yields[i] !== null ? yields[i] : null,
       }));
     }),
-    tap(() => console.log('UST10Y data retrieved')),
+    tap(() => console.log('UST10Y data retrieved successfully')),
 
     catchError(error => {
       console.error('Failed to fetch UST10Y data:', error);

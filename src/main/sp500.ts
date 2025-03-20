@@ -3,7 +3,7 @@ import { EMPTY, forkJoin } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { fetchSP500Data, fetchUST10YData, fetchVIXData } from '../shared/apis';
 import { DATE_FORMAT, FILE_PATH } from '../shared/constants';
-import { createOrReadJSON, saveDataToJSON } from '../shared/util';
+import { createOrReadJSON, patchDataToJSON } from '../shared/util';
 
 function fetchAndStoreSP500IntegratedData() {
   return forkJoin([fetchSP500Data(), fetchVIXData(), fetchUST10YData()]).pipe(
@@ -45,7 +45,7 @@ function fetchAndStoreSP500IntegratedData() {
       );
     }),
     tap(mergedData => {
-      saveDataToJSON(FILE_PATH.SP500, mergedData);
+      patchDataToJSON(FILE_PATH.SP500, mergedData);
       console.log('All data has been merged and saved to data.json');
     }),
     catchError(error => {

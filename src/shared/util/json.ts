@@ -9,7 +9,11 @@ export const createOrReadJSON = (filePath: FILE_PATH): any[] => {
 
     const data = fs.readFileSync(filePath, 'utf8');
 
-    return JSON.parse(data);
+    if (data) {
+      return JSON.parse(data);
+    }
+
+    return [];
   } catch (err) {
     console.error('Error reading or creating file:', err);
 
@@ -23,6 +27,24 @@ export const saveDataToJSON = (filePath: FILE_PATH, data: any[]): void => {
     console.log('Data saved successfully');
   } catch (err) {
     console.error('Error saving data:', err);
+  }
+};
+
+export const patchDataToJSON = (filePath: FILE_PATH, newData: any[]): void => {
+  try {
+    const existingData = createOrReadJSON(filePath);
+
+    const existingDataSet = new Set(existingData.map(item => JSON.stringify(item)));
+
+    const filteredData = newData.filter(item => !existingDataSet.has(JSON.stringify(item)));
+
+    if (filteredData.length > 0) {
+      saveDataToJSON(filePath, [...existingData, ...filteredData]);
+    } else {
+      console.log('No new data to patch');
+    }
+  } catch (err) {
+    console.error('Error patching data:', err);
   }
 };
 
@@ -48,34 +70,27 @@ export const deleteDataInJSON = (filePath: FILE_PATH, conditionFn: (item: any) =
   }
 };
 
-export const readDataFromJSON = (filePath: FILE_PATH): any[] => {
-  try {
-    const data = createOrReadJSON(filePath);
-    return data;
-  } catch (err) {
-    console.error('Error reading data:', err);
-    return [];
-  }
-};
-
 export function testJSON() {
-  const filePath = FILE_PATH.SP500;
+  const filePath = FILE_PATH.TEST;
 
-  const dataToAdd: any = { id: 1, name: 'Item 1' };
+  const data1 = { id: 1, name: 'data 1' };
+
   const data = createOrReadJSON(filePath);
 
-  console.log(data);
-  // data.push(dataToAdd);
+  data.push(data1);
+
   // saveDataToJSON(filePath, data);
+
+  patchDataToJSON(filePath, data);
 
   // updateDataInJSON(
   //   filePath,
   //   item => item.id === 1,
-  //   item => ({ ...item, name: 'Updated Item 1' })
+  //   item => ({ ...item, name: 'updated data 1' })
   // );
 
   // deleteDataInJSON(filePath, item => item.id === 1);
 
-  const allData = readDataFromJSON(filePath);
+  const allData = createOrReadJSON(filePath);
   console.log(allData);
 }

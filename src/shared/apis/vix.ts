@@ -2,7 +2,7 @@ import axios from 'axios';
 import { format, fromUnixTime } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { catchError, EMPTY, from, map, tap } from 'rxjs';
-import { TIME_ZONE, YAHOO_FINANCE_API_URL } from '../constants';
+import { DATE_FORMAT, TIME_ZONE, YAHOO_FINANCE_API_URL } from '../constants';
 import { YahooVIXResponse } from '../models';
 
 export function fetchVIXData() {
@@ -18,11 +18,11 @@ export function fetchVIXData() {
       const vixValues = result.indicators.quote[0].close;
 
       return timestamps.map((ts, i) => ({
-        date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
+        date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), DATE_FORMAT),
         vix: vixValues[i] !== null ? vixValues[i] : null,
       }));
     }),
-    tap(() => console.log('VIX data retrieved')),
+    tap(() => console.log('VIX data retrieved successfully')),
 
     catchError(error => {
       console.error('Failed to fetch VIX data:', error);

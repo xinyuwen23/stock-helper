@@ -37,7 +37,7 @@ export function fetchSP500Data() {
         .filter(entry => entry.sp500.open !== null)
         .filter(entry => !isBefore(parse(entry.date, DATE_FORMAT, new Date()), minDate));
     }),
-    tap(() => console.log('SP500 data retrieved')),
+    tap(() => console.log('SP500 data retrieved successfully')),
 
     catchError(error => {
       console.error('Failed to fetch S&P 500 data:', error);
