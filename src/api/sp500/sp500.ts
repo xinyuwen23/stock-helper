@@ -1,18 +1,21 @@
 import axios from 'axios';
 import { from, EMPTY, forkJoin } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
-import { format, fromUnixTime } from 'date-fns';
+import { format, fromUnixTime, isBefore, parse } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { SP500Data } from '../../shared/models/sp500.model';
 import { VIXData } from '../../shared/models/vix.model';
 import { UST10YData } from '../../shared/models/ust10y.model';
-import { YAHOO_FINANCE_API_URL, TIME_ZONE } from '../../shared/constants/sp500.constants';
+import { YAHOO_FINANCE_API_URL, TIME_ZONE, MIN_DATE, DATE_FORMAT } from '../../shared/constants/sp500.constants';
 import { FilePath, saveDataToJSON } from '../../shared/util';
 
-// 获取并处理 S&P 500 数据
 function fetchSP500Data() {
   return from(axios.get<SP500Data>(YAHOO_FINANCE_API_URL.SP500)).pipe(
     map(response => {
+      console.log('SP500 data retrieved');
+
+      const minDate = parse(MIN_DATE, DATE_FORMAT, new Date());
+
       const result = response.data.chart.result[0];
 
       if (!result || !result.timestamp || !result.indicators) {
@@ -23,17 +26,22 @@ function fetchSP500Data() {
       const { open, high, low, close, volume } = result.indicators.quote[0];
 
       return timestamp
-        .map((ts, i) => ({
-          date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
-          sp500: {
-            open: open[i] !== null ? open[i] : null,
-            high: high[i] !== null ? high[i] : null,
-            low: low[i] !== null ? low[i] : null,
-            close: close[i] !== null ? close[i] : null,
-            volume: volume[i] !== null ? volume[i] : null,
-          },
-        }))
-        .filter(entry => entry.sp500.open !== null);
+        .map((ts, i) => {
+          const date = format(toZonedTime(fromUnixTime(ts), TIME_ZONE), DATE_FORMAT);
+
+          return {
+            date,
+            sp500: {
+              open: open[i] !== null ? open[i] : null,
+              high: high[i] !== null ? high[i] : null,
+              low: low[i] !== null ? low[i] : null,
+              close: close[i] !== null ? close[i] : null,
+              volume: volume[i] !== null ? volume[i] : null,
+            },
+          };
+        })
+        .filter(entry => entry.sp500.open !== null)
+        .filter(entry => !isBefore(parse(entry.date, DATE_FORMAT, new Date()), minDate));
     }),
     catchError(error => {
       console.error('Failed to fetch S&P 500 data:', error);
@@ -42,10 +50,11 @@ function fetchSP500Data() {
   );
 }
 
-// 获取并处理 VIX 数据
 function fetchVIXData() {
   return from(axios.get<VIXData>(YAHOO_FINANCE_API_URL.VIX)).pipe(
     map(response => {
+      console.log('VIX data retrieved');
+
       const result = response.data.chart.result[0];
 
       if (!result || !result.timestamp || !result.indicators) {
@@ -67,10 +76,11 @@ function fetchVIXData() {
   );
 }
 
-// 获取并处理 UST10Y 数据
 function fetchUST10YData() {
   return from(axios.get<UST10YData>(YAHOO_FINANCE_API_URL.UST10Y)).pipe(
     map(response => {
+      console.log('UST10Y data retrieved');
+
       const result = response.data.chart.result[0];
 
       if (!result || !result.timestamp || !result.indicators) {
@@ -81,7 +91,7 @@ function fetchUST10YData() {
       const yields = result.indicators.quote[0].close;
 
       return timestamps.map((ts, i) => ({
-        date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), 'MM-dd-yyyy'),
+        date: format(toZonedTime(fromUnixTime(ts), TIME_ZONE), DATE_FORMAT),
         ust10y: yields[i] !== null ? yields[i] : null,
       }));
     }),
@@ -92,7 +102,6 @@ function fetchUST10YData() {
   );
 }
 
-// 获取并存储所有数据
 function fetchAndStoreAllData() {
   return forkJoin([fetchSP500Data(), fetchVIXData(), fetchUST10YData()]).pipe(
     map(([sp500Data, vixData, ust10yData]) => {
@@ -119,7 +128,6 @@ function fetchAndStoreAllData() {
   );
 }
 
-// 执行数据获取和存储
 export function getStockData() {
   fetchAndStoreAllData().subscribe();
 }
