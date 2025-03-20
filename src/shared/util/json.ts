@@ -1,16 +1,10 @@
 import * as fs from 'fs';
+import { FILE_PATH } from '../constants';
 
-// 定义数据项的接口
-
-export enum FilePath {
-  SP500 = 'sp500.json',
-}
-
-// 创建或读取 JSON 文件
-export const createOrReadJSON = (filePath: FilePath): unknown[] => {
+export const createOrReadJSON = (filePath: FILE_PATH): any[] => {
   try {
     if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, JSON.stringify([])); // 如果文件不存在，则创建一个空数组
+      fs.writeFileSync(filePath, JSON.stringify([]));
     }
 
     const data = fs.readFileSync(filePath, 'utf8');
@@ -23,21 +17,19 @@ export const createOrReadJSON = (filePath: FilePath): unknown[] => {
   }
 };
 
-// 存入数据
-export const saveDataToJSON = (filePath: FilePath, data: unknown[]): void => {
+export const saveDataToJSON = (filePath: FILE_PATH, data: any[]): void => {
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2)); // 格式化输出
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     console.log('Data saved successfully');
   } catch (err) {
     console.error('Error saving data:', err);
   }
 };
 
-// 更新数据
-export const updateDataInJSON = (filePath: FilePath, conditionFn: (item: unknown) => boolean, updateFn: (item: unknown) => unknown): void => {
+export const updateDataInJSON = (filePath: FILE_PATH, conditionFn: (item: any) => boolean, updateFn: (item: any) => any): void => {
   try {
     const data = createOrReadJSON(filePath);
-    const updatedData = data.map(item => (conditionFn(item) ? updateFn(item) : item)); // 更新符合条件的数据
+    const updatedData = data.map(item => (conditionFn(item) ? updateFn(item) : item));
     saveDataToJSON(filePath, updatedData);
     console.log('Data updated successfully');
   } catch (err) {
@@ -45,11 +37,10 @@ export const updateDataInJSON = (filePath: FilePath, conditionFn: (item: unknown
   }
 };
 
-// 删除数据
-export const deleteDataInJSON = (filePath: FilePath, conditionFn: (item: unknown) => boolean): void => {
+export const deleteDataInJSON = (filePath: FILE_PATH, conditionFn: (item: any) => boolean): void => {
   try {
     const data = createOrReadJSON(filePath);
-    const filteredData = data.filter(item => !conditionFn(item)); // 删除符合条件的数据
+    const filteredData = data.filter(item => !conditionFn(item));
     saveDataToJSON(filePath, filteredData);
     console.log('Data deleted successfully');
   } catch (err) {
@@ -57,11 +48,10 @@ export const deleteDataInJSON = (filePath: FilePath, conditionFn: (item: unknown
   }
 };
 
-// 读取数据
-export const readDataFromJSON = (filePath: FilePath): unknown[] => {
+export const readDataFromJSON = (filePath: FILE_PATH): any[] => {
   try {
     const data = createOrReadJSON(filePath);
-    return data; // 返回整个数据
+    return data;
   } catch (err) {
     console.error('Error reading data:', err);
     return [];
@@ -69,28 +59,23 @@ export const readDataFromJSON = (filePath: FilePath): unknown[] => {
 };
 
 export function testJSON() {
-  // 示例用法
-  const filePath = FilePath.SP500;
+  const filePath = FILE_PATH.SP500;
 
-  // 添加数据
-  const dataToAdd: unknown = { id: 1, name: 'Item 1' };
+  const dataToAdd: any = { id: 1, name: 'Item 1' };
   const data = createOrReadJSON(filePath);
 
   console.log(data);
   // data.push(dataToAdd);
   // saveDataToJSON(filePath, data);
 
-  // 更新数据
   // updateDataInJSON(
   //   filePath,
   //   item => item.id === 1,
   //   item => ({ ...item, name: 'Updated Item 1' })
   // );
 
-  // 删除数据
   // deleteDataInJSON(filePath, item => item.id === 1);
 
-  // 读取数据
   const allData = readDataFromJSON(filePath);
   console.log(allData);
 }

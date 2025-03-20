@@ -1,3 +1,7 @@
-import { getStockData } from './api/sp500/sp500';
+import { retrieveSP500Data } from './main';
 
-getStockData();
+function main() {
+  retrieveSP500Data();
+}
+
+main();
