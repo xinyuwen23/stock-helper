@@ -5,10 +5,10 @@ function main() {
   retrieveSP500Data();
 }
 
-// main();
+main();
 
 function test() {
   testJSON();
 }
 
-test();
+// test();

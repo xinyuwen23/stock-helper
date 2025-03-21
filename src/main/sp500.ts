@@ -2,7 +2,7 @@ import { parse } from 'date-fns';
 import { EMPTY, forkJoin } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { fetchSP500Data, fetchUST10YData, fetchVIXData } from '../shared/apis';
-import { DATE_FORMAT, FILE_PATH } from '../shared/constants';
+import { DATE_FORMAT, FILE_PATH, JSON_PRIMARY_KEY } from '../shared/constants';
 import { createOrReadJSON, patchDataToJSON } from '../shared/util';
 
 function fetchAndStoreSP500IntegratedData() {
@@ -45,7 +45,7 @@ function fetchAndStoreSP500IntegratedData() {
       );
     }),
     tap(mergedData => {
-      patchDataToJSON(FILE_PATH.SP500, mergedData);
+      patchDataToJSON(FILE_PATH.SP500, mergedData, JSON_PRIMARY_KEY.SP500);
       console.log('All data has been merged and saved to data.json');
     }),
     catchError(error => {
