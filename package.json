@@ -4,6 +4,7 @@
     "start": "ts-node src/index.ts"
   },
   "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
     "axios": "^1.8.3",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
