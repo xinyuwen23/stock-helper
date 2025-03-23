@@ -1,8 +1,8 @@
-import { retrieveSP500Data } from './main';
+import { retrieveStockData } from './main';
 import { testJSON } from './shared/util';
 
 function main() {
-  retrieveSP500Data();
+  retrieveStockData().subscribe();
 }
 
 main();

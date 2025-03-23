@@ -5,10 +5,10 @@ import { fetchSP500Data, fetchUST10YData, fetchVIXData } from '../shared/apis';
 import { DATE_FORMAT, FILE_PATH, JSON_PRIMARY_KEY } from '../shared/constants';
 import { createOrReadJSON, patchDataToJSON } from '../shared/util';
 
-function fetchAndStoreSP500IntegratedData() {
+export function retrieveStockData() {
   return forkJoin([fetchSP500Data(), fetchVIXData(), fetchUST10YData()]).pipe(
     map(([sp500Data, vixData, ust10yData]) => {
-      const existingData = createOrReadJSON(FILE_PATH.SP500);
+      const existingData = createOrReadJSON(FILE_PATH.STOCK);
 
       const newDataMap = new Map(
         sp500Data.map(sp500Entry => [
@@ -45,7 +45,7 @@ function fetchAndStoreSP500IntegratedData() {
       );
     }),
     tap(mergedData => {
-      patchDataToJSON(FILE_PATH.SP500, mergedData, JSON_PRIMARY_KEY.SP500);
+      patchDataToJSON(FILE_PATH.STOCK, mergedData, JSON_PRIMARY_KEY.DATE);
       console.log('All data has been merged and saved to data.json');
     }),
     catchError(error => {
@@ -53,8 +53,4 @@ function fetchAndStoreSP500IntegratedData() {
       return EMPTY;
     })
   );
-}
-
-export function retrieveSP500Data() {
-  fetchAndStoreSP500IntegratedData().subscribe();
 }

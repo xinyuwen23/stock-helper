@@ -1,1 +1,1 @@
-export * from './sp500';
+export * from './retrieveStock';
