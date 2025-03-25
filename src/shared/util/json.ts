@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { merge } from 'lodash';
 import { FILE_PATH } from '../constants';
 
 export const createOrReadJSON = (filePath: FILE_PATH): any[] => {
@@ -38,8 +39,16 @@ export const patchDataToJSON = (filePath: FILE_PATH, newData: any[], primaryKey:
 
     const dataMap = new Map(existingData.map(item => [item[primaryKey], item]));
 
-    newData.forEach(item => {
-      dataMap.set(item[primaryKey], item);
+    newData.forEach(newItem => {
+      if (dataMap.has(newItem[primaryKey])) {
+        const existingItem = dataMap.get(newItem[primaryKey]);
+
+        merge(existingItem, newItem);
+
+        dataMap.set(newItem[primaryKey], existingItem);
+      } else {
+        dataMap.set(newItem[primaryKey], newItem);
+      }
     });
 
     const updatedData = Array.from(dataMap.values());
