@@ -1,7 +1,8 @@
 {
   "name": "stock-helper",
   "scripts": {
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "test": "ts-node src/test.ts"
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",

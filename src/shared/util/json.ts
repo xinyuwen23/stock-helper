@@ -58,26 +58,3 @@ export const patchDataToJSON = (filePath: FILE_PATH, newData: any[], primaryKey:
     console.error('Error patching data:', err);
   }
 };
-
-export function testJSON() {
-  const filePath = FILE_PATH.TEST;
-
-  const data1 = { id: 1, data: 'data 1' };
-  const data2 = { id: 2, data: 'data 2' };
-  const data3 = { id: 3, data: 'data 3' };
-  const updateData3 = { id: 3, data: 'updated data 3' };
-
-  const data = createOrReadJSON(filePath);
-
-  data.push(data1);
-  data.push(data2);
-  data.push(data3);
-  data.push(updateData3);
-
-  // saveDataToJSON(filePath, data);
-
-  patchDataToJSON(filePath, data, 'id');
-
-  const allData = createOrReadJSON(filePath);
-  console.log(allData);
-}
