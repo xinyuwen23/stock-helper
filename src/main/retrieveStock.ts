@@ -1,9 +1,9 @@
 import { parse } from 'date-fns';
 import { EMPTY, forkJoin } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { fetchSP500Data, fetchUST10YData, fetchVIXData } from '../shared/apis';
-import { DATE_FORMAT, FILE_PATH, JSON_PRIMARY_KEY } from '../shared/constants';
-import { createOrReadJSON, patchDataToJSON } from '../shared/util';
+import { fetchSP500Data, fetchUST10YData, fetchVIXData } from '../apis';
+import { DATE_FORMAT, FILE_PATH, JSON_PRIMARY_KEY } from '../constants';
+import { createOrReadJSON, patchDataToJSON } from '../indicators';
 
 export function retrieveStockData() {
   return forkJoin([fetchSP500Data(), fetchVIXData(), fetchUST10YData()]).pipe(
