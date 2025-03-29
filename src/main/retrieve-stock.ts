@@ -3,7 +3,7 @@ import { EMPTY, forkJoin } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { fetchSP500Data, fetchUST10YData, fetchVIXData } from '../apis';
 import { DATE_FORMAT, FILE_PATH, JSON_PRIMARY_KEY } from '../constants';
-import { createOrReadJSON, patchDataToJSON } from '../indicators';
+import { createOrReadJSON, patchDataToJSON } from '../json';
 
 export function retrieveStockData() {
   return forkJoin([fetchSP500Data(), fetchVIXData(), fetchUST10YData()]).pipe(

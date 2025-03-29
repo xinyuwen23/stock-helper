@@ -1,6 +1,9 @@
 import { FILE_PATH } from '../constants';
-import { saveMACDToJSON } from '../indicators';
+import { saveMACDToJSON, saveRSIToJSON } from '../indicators';
+
+const filePath = FILE_PATH.STOCK;
 
 export function calculateIndicators() {
-  saveMACDToJSON(FILE_PATH.STOCK);
+  saveMACDToJSON(filePath);
+  saveRSIToJSON(filePath);
 }

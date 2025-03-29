@@ -1,5 +1,5 @@
-import { createOrReadJSON, patchDataToJSON } from '.';
 import { FILE_PATH } from '../constants';
+import { createOrReadJSON, patchDataToJSON } from '../json';
 
 const shortPeriod = 12;
 const longPeriod = 26;
