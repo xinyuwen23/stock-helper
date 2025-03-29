@@ -1,2 +1,2 @@
-export * from './calculateIndicators';
-export * from './retrieveStock';
+export * from './calculate-indicators';
+export * from './retrieve-stock';
