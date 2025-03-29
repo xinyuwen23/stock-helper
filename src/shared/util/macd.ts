@@ -20,22 +20,27 @@ export function saveMACDToJSON(filePath: FILE_PATH): void {
 
 export function calculateMACD(data: any[]): any[] {
   const closePrices = data.map(d => d.sp500.close);
-
   const shortEMA = calculateEMA(shortPeriod, closePrices);
   const longEMA = calculateEMA(longPeriod, closePrices);
-
-  const macdLine = shortEMA.map((ema, i) => ema - longEMA[i]);
-
-  const signalLine = calculateEMA(signalPeriod, macdLine);
-
-  const histogram = macdLine.map((macd, i) => macd - signalLine[i]);
+  const macdLine = shortEMA.map((ema, i) => (isNaN(ema) || isNaN(longEMA[i]) ? NaN : ema - longEMA[i]));
+  const signalLine = calculateEMA(
+    signalPeriod,
+    macdLine.filter(v => !isNaN(v))
+  );
+  const histogram = macdLine.map((macd, i) => (isNaN(macd) || isNaN(signalLine[i]) ? NaN : macd - signalLine[i]));
 
   return data.map((entry, index) => ({
     ...entry,
-    macd: {
-      macd: macdLine[index] ?? null,
-      signal: signalLine[index] ?? null,
-      histogram: histogram[index] ?? null,
+    sp500: {
+      ...entry.sp500,
+      indicators: {
+        ...(entry.sp500.indicators || {}),
+        macd: {
+          macd: isNaN(macdLine[index]) ? null : macdLine[index],
+          signal: isNaN(signalLine[index]) ? null : signalLine[index],
+          histogram: isNaN(histogram[index]) ? null : histogram[index],
+        },
+      },
     },
   }));
 }

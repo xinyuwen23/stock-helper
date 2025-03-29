@@ -6,7 +6,7 @@ enum YAHOO_FINANCE_SYMBOL {
 
 enum YAHOO_FINANCE_URL_PARAM {
   INTERVAL = '1d',
-  RANGE = '10d',
+  RANGE = '16y',
 }
 
 export enum YAHOO_FINANCE_API_URL {
